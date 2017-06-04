@@ -1,0 +1,32 @@
+{
+  "name": "js-pitch-detector",
+  "version": "1.0.0",
+  "description": "Pitch detection with the Web Audio API.",
+  "keywords": [
+    "pitch",
+    "music",
+    "note",
+    "audio",
+    "detection"
+  ],
+  "homepage": "https://www.github.com/rharel/js-pitch-detector",
+  "bugs": {
+    "url": "https://www.github.com/rharel/js-pitch-detector/issues"
+  },
+  "license": "MIT",
+  "author": "Raoul Harel",
+  "main": "dist/pitch_detection.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rharel/js-pitch-detector.git"
+  },
+  "devDependencies": {
+    "chai": "^4.0.0",
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-rename": "^1.2.2"
+  },
+  "dependencies": {
+    "@rharel/music-note-utils": "^1.0.1"
+  }
+}
