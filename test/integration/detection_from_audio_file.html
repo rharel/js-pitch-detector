@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Detection From Audio Test</title>
+
+    <script src="../../node_modules/@rharel/music-note-utils/dist/music_note_utils.js"></script>
+
+    <script src="../../dist/pitch_detection.js"></script>
+</head>
+<canvas width="768" height="300"></canvas><br>
+<input type="button" value="Play">
+<div>
+    Detected note (naive): <span id="naive-note"></span><br>
+    Detected note (refined): <span id="refined-note"></span>
+</div>
+<script>
+(function()
+{
+    const DOM =
+    {
+        audio: document.querySelector("audio"),
+        canvas: document.querySelector("canvas"),
+        play_button: document.querySelector("input"),
+        detected_note_naive: document.querySelector("#naive-note"),
+        detected_note_refined: document.querySelector("#refined-note")
+    };
+
+    const audio_system = new Audio.System(new AudioContext());
+
+	const low = MusicNoteUtilities.Note.from_string("C3");
+	const high = MusicNoteUtilities.Note.from_string("C6");
+	const desired_resolution = low.transpose(1).frequency() - low.frequency();
+	const fft_size = audio_system.recommend_size(desired_resolution);
+	const resolution = audio_system.resolution(fft_size);
+	const range =
+    {
+        min: Math.floor(low.frequency() / resolution),
+        max: Math.ceil(high.frequency() / resolution)
+    };
+
+    const detector = new PitchDetection.Detector(150, 12);
+
+    function initialize()
+    {
+		DOM.play_button.value = "Play";
+
+		Audio.Clip.from_url
+		(
+			"../audio/scale_C4_major.mp3", audio_system,
+			audio_clip =>
+        {
+			audio_clip.fft_size = fft_size;
+			const result = Visualization.AudioClipAnimation.for_frequency_domain
+			(
+				audio_clip, DOM.canvas,
+				range
+			);
+            const animation = result.animation;
+            animation.on_animation_stop(() =>
+            {
+                DOM.play_button.value = "Play"
+            });
+			DOM.play_button.addEventListener("click", () =>
+			{
+				animation.toggle_play();
+				DOM.play_button.value = animation.is_playing ? "Stop" : "Play";
+			});
+
+			const data = result.data;
+			animation.on_animation_frame(() =>
+            {
+            	DOM.detected_note_naive.textContent =
+                    PitchDetection.detect_naively(data, range, resolution);
+            	DOM.detected_note_refined.textContent =
+                    detector.detect(data, range, resolution);
+            })
+        });
+    }
+    window.addEventListener("DOMContentLoaded", initialize);
+})();
+</script>
+</body>
+</html>

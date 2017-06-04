@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Detection From User Media Test</title>
+
+    <script src="../../node_modules/@rharel/music-note-utils/dist/music_note_utils.js"></script>
+
+    <script src="../../dist/pitch_detection.js"></script>
+</head>
+<canvas width="768" height="300"></canvas><br>
+<div>
+    Detected note (naive): <span id="naive-note"></span><br>
+    Detected note (refined): <span id="refined-note"></span>
+</div>
+<script>
+(function()
+{
+    const DOM =
+    {
+        audio: document.querySelector("audio"),
+        canvas: document.querySelector("canvas"),
+        detected_note_naive: document.querySelector("#naive-note"),
+        detected_note_refined: document.querySelector("#refined-note")
+    };
+
+    const graphics_context = DOM.canvas.getContext("2d");
+    const audio_system = new Audio.System(new AudioContext());
+    audio_system.route.volume = 0;
+
+    const low = MusicNoteUtilities.Note.from_string("C4");
+    const high = MusicNoteUtilities.Note.from_string("C6");
+    const desired_resolution = low.transpose(1).frequency() - low.frequency();
+    const fft_size = audio_system.recommend_size(desired_resolution);
+    const bin_count = Audio.fft_bin_count(fft_size);
+    const resolution = audio_system.resolution(fft_size);
+    const range =
+    {
+        min: Math.floor(low.frequency() / resolution),
+        max: Math.ceil(high.frequency() / resolution)
+    };
+
+    const detector = new PitchDetection.Detector(150, 12);
+
+    function initialize()
+    {
+        const data = new Uint8Array(bin_count);
+
+        function main()
+        {
+            requestAnimationFrame(main);
+
+            audio_system.route.get_byte_frequency_data(data);
+
+            Visualization.draw_bars(data, range, graphics_context);
+
+            DOM.detected_note_naive.textContent =
+                PitchDetection.detect_naively(data, range, resolution);
+            DOM.detected_note_refined.textContent =
+                detector.detect(data, range, resolution);
+        }
+
+        Audio.start_capture(audio_system.route)
+        .then(() => requestAnimationFrame(main))
+        .catch(error => console.log("Could not get user media: " + error));
+    }
+    window.addEventListener("DOMContentLoaded", initialize);
+})();
+</script>
+</body>
+</html>
